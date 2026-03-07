@@ -77,8 +77,15 @@ export default function Page() {
 
             <aside className="viewer-overlay admin-panel" id="admin-panel" hidden>
               <div className="admin-header">
-                <p className="eyebrow">Admin mode</p>
-                <h2>Lot editor</h2>
+                <div className="admin-header-row">
+                  <div>
+                    <p className="eyebrow">Admin mode</p>
+                    <h2>Lot editor</h2>
+                  </div>
+                  <button type="button" className="panel-hide-button" id="admin-panel-hide">
+                    Hide panel
+                  </button>
+                </div>
                 <p className="admin-copy" id="admin-sync-state">
                   Changes stay in this browser until you publish.
                 </p>

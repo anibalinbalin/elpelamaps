@@ -4,6 +4,7 @@ const PANORAMA_URL = "/panoramas/playa-brava-jose-ignacio/playa-brava-jose-ignac
 const LOT_DATA_URL = "/data/playa-brava-jose-ignacio-lots.json";
 const STORAGE_KEY = "elpela:playa-brava-jose-ignacio:admin-draft:v1";
 const PUBLISHED_STORAGE_KEY = "elpela:playa-brava-jose-ignacio:published:v1";
+const VIEW_STATE_KEY = "elpela:playa-brava-jose-ignacio:view-state:v1";
 const ADMIN_ENABLED = new URL(window.location.href).searchParams.get("admin") === "1";
 
 const VIEWER_LIMITS = {
@@ -21,6 +22,8 @@ const STATUS_META = {
   sold: { label: "Sold" }
 };
 
+const initialView = readViewState();
+
 const viewerEl = document.querySelector("[data-viewer]");
 const lotOverlayEl = document.getElementById("lot-overlay");
 const lotLabelLayerEl = document.getElementById("lot-label-layer");
@@ -28,7 +31,8 @@ const statusEl = document.getElementById("viewer-status");
 const readoutEl = document.getElementById("view-readout");
 const switchToPublicButton = document.getElementById("switch-to-public");
 const switchToAdminButton = document.getElementById("switch-to-admin");
-const mobileAdminToggleButton = document.getElementById("mobile-admin-toggle");
+const panelToggleButton = document.getElementById("mobile-admin-toggle");
+const adminPanelHideButton = document.getElementById("admin-panel-hide");
 const resetButton = document.getElementById("reset-view");
 const zoomOutButton = document.getElementById("zoom-out");
 const zoomInButton = document.getElementById("zoom-in");
@@ -65,9 +69,9 @@ const confirmCopyEl = document.getElementById("confirm-copy");
 const mobileLayoutMedia = window.matchMedia("(max-width: 720px)");
 
 const state = {
-  lon: 0,
-  lat: 0,
-  fov: 75,
+  lon: initialView?.lon ?? 0,
+  lat: initialView?.lat ?? 0,
+  fov: initialView?.fov ?? 75,
   isDragging: false,
   pointerOriginX: 0,
   pointerOriginY: 0,
@@ -77,7 +81,7 @@ const state = {
   hasLoaded: false,
   adminEnabled: ADMIN_ENABLED,
   isMobileLayout: mobileLayoutMedia.matches,
-  mobileAdminPanelOpen: !mobileLayoutMedia.matches,
+  adminPanelOpen: !mobileLayoutMedia.matches,
   adminDrawMode: false,
   activeLotId: null,
   hoveredLotId: null,
@@ -149,6 +153,7 @@ viewerEl.addEventListener("pointercancel", onPointerUp);
 viewerEl.addEventListener("wheel", onWheel, { passive: false });
 window.addEventListener("resize", resizeRenderer);
 window.addEventListener("keydown", onKeyDown);
+window.addEventListener("pagehide", persistViewState);
 mobileLayoutMedia.addEventListener("change", syncResponsiveLayout);
 
 resetButton.addEventListener("click", resetView);
@@ -158,7 +163,8 @@ fullscreenButton.addEventListener("click", toggleFullscreen);
 lotCardCloseButton.addEventListener("click", closeLotCard);
 switchToPublicButton.addEventListener("click", () => switchMode(false));
 switchToAdminButton.addEventListener("click", () => switchMode(true));
-mobileAdminToggleButton.addEventListener("click", toggleMobileAdminPanel);
+panelToggleButton.addEventListener("click", toggleAdminPanel);
+adminPanelHideButton.addEventListener("click", toggleAdminPanel);
 
 if (state.adminEnabled) {
   adminPanelEl.hidden = false;
@@ -308,6 +314,9 @@ async function initializeLotData() {
       state.editorLot = normalizeLot(stored.editorLot) ?? createEmptyLot(nextLotNumber());
       state.selectedLotId = stored.selectedLotId ?? null;
       state.adminDrawMode = Boolean(stored.adminDrawMode);
+      if (state.adminDrawMode && state.isMobileLayout) {
+        state.adminPanelOpen = false;
+      }
       setAdminSyncState("Loaded local admin draft. Publish locally to preview it as a customer.");
     } else {
       state.lotData = published;
@@ -345,6 +354,29 @@ function readPublishedLotData() {
   }
 }
 
+function readViewState() {
+  try {
+    const raw = localStorage.getItem(VIEW_STATE_KEY);
+
+    if (!raw) {
+      return null;
+    }
+
+    const data = JSON.parse(raw);
+    const lon = Number(data?.lon);
+    const lat = Number(data?.lat);
+    const fov = Number(data?.fov);
+
+    return {
+      lon: Number.isFinite(lon) ? lon : 0,
+      lat: Number.isFinite(lat) ? THREE.MathUtils.clamp(lat, -85, 85) : 0,
+      fov: Number.isFinite(fov) ? THREE.MathUtils.clamp(fov, VIEWER_LIMITS.minFov, VIEWER_LIMITS.maxFov) : 75
+    };
+  } catch {
+    return null;
+  }
+}
+
 function persistAdminDraft() {
   if (!state.adminEnabled) {
     return;
@@ -362,6 +394,21 @@ function persistAdminDraft() {
 
 function persistPublishedLotData(data) {
   localStorage.setItem(PUBLISHED_STORAGE_KEY, JSON.stringify(data));
+}
+
+function persistViewState() {
+  try {
+    localStorage.setItem(
+      VIEW_STATE_KEY,
+      JSON.stringify({
+        lon: Number(state.lon.toFixed(3)),
+        lat: Number(state.lat.toFixed(3)),
+        fov: Number(state.fov.toFixed(3))
+      })
+    );
+  } catch {
+    // Ignore storage failures so the viewer keeps working.
+  }
 }
 
 function setStatus(message) {
@@ -414,26 +461,26 @@ function syncResponsiveLayout() {
   viewerEl.classList.toggle("is-mobile-layout", state.isMobileLayout);
 
   if (!state.adminEnabled) {
-    mobileAdminToggleButton.hidden = true;
+    panelToggleButton.hidden = true;
     viewerEl.classList.remove("is-admin-panel-open");
+    adminPanelEl.classList.remove("is-collapsed");
     return;
   }
 
-  if (!state.isMobileLayout) {
-    state.mobileAdminPanelOpen = true;
-  }
-
-  mobileAdminToggleButton.hidden = !state.isMobileLayout;
-  mobileAdminToggleButton.textContent = state.mobileAdminPanelOpen ? "Hide editor" : "Open editor";
-  mobileAdminToggleButton.setAttribute("aria-expanded", String(state.mobileAdminPanelOpen));
-  adminPanelEl.classList.toggle("is-mobile-collapsed", state.isMobileLayout && !state.mobileAdminPanelOpen);
-  viewerEl.classList.toggle("is-admin-panel-open", state.isMobileLayout && state.mobileAdminPanelOpen);
+  panelToggleButton.hidden = state.adminPanelOpen;
+  panelToggleButton.textContent = state.adminDrawMode ? "Return to editor" : "Open editor";
+  panelToggleButton.setAttribute("aria-expanded", String(state.adminPanelOpen));
+  adminPanelHideButton.hidden = !state.adminPanelOpen;
+  adminPanelEl.classList.toggle("is-collapsed", !state.adminPanelOpen);
+  viewerEl.classList.toggle("is-admin-panel-open", state.adminPanelOpen);
 }
 
 function switchMode(enableAdmin) {
   if (enableAdmin === state.adminEnabled) {
     return;
   }
+
+  persistViewState();
 
   const url = new URL(window.location.href);
 
@@ -446,12 +493,12 @@ function switchMode(enableAdmin) {
   window.location.href = url.toString();
 }
 
-function toggleMobileAdminPanel() {
-  if (!state.adminEnabled || !state.isMobileLayout) {
+function toggleAdminPanel() {
+  if (!state.adminEnabled) {
     return;
   }
 
-  state.mobileAdminPanelOpen = !state.mobileAdminPanelOpen;
+  state.adminPanelOpen = !state.adminPanelOpen;
   syncResponsiveLayout();
 }
 
@@ -490,9 +537,13 @@ function render() {
 }
 
 function isInteractiveTarget(target) {
+  if (!(target instanceof Element)) {
+    return false;
+  }
+
   return Boolean(
     target.closest(
-      ".viewer-copy, .viewer-toolbar, .lot-card, .admin-panel, .lot-label, .lot-shape, .confirm-sheet"
+      ".viewer-copy, .viewer-toolbar, .lot-card, .admin-panel, .mobile-admin-toggle, .lot-label, .lot-shape, .confirm-sheet, button, input, textarea, select, a"
     )
   );
 }
@@ -547,6 +598,8 @@ function onPointerUp(event) {
   if (shouldAddPoint) {
     addPointFromPointer(event.clientX, event.clientY);
   }
+
+  persistViewState();
 }
 
 function onWheel(event) {
@@ -555,18 +608,35 @@ function onWheel(event) {
 }
 
 function updateFov(nextFov) {
-  state.fov = THREE.MathUtils.clamp(nextFov, VIEWER_LIMITS.minFov, VIEWER_LIMITS.maxFov);
+  const clampedFov = THREE.MathUtils.clamp(nextFov, VIEWER_LIMITS.minFov, VIEWER_LIMITS.maxFov);
+
+  if (state.fov === clampedFov) {
+    return;
+  }
+
+  state.fov = clampedFov;
   camera.fov = state.fov;
   camera.updateProjectionMatrix();
+  persistViewState();
 }
 
 function resetView() {
   state.lon = 0;
   state.lat = 0;
   updateFov(75);
+  persistViewState();
 }
 
 function onKeyDown(event) {
+  const activeElement = document.activeElement;
+  const isEditingField =
+    activeElement instanceof HTMLElement &&
+    (activeElement.matches("input, textarea, select") || activeElement.isContentEditable);
+
+  if (isEditingField && event.key !== "Escape") {
+    return;
+  }
+
   if (state.adminEnabled && event.key === "Enter" && document.activeElement === toggleDrawButton) {
     toggleDrawMode();
   }
@@ -603,6 +673,7 @@ function onKeyDown(event) {
       if (state.adminEnabled && state.adminDrawMode) {
         state.adminDrawMode = false;
         syncAdminUI();
+        persistAdminDraft();
       } else {
         closeLotCard();
       }
@@ -611,6 +682,7 @@ function onKeyDown(event) {
       return;
   }
 
+  persistViewState();
   event.preventDefault();
 }
 
@@ -934,9 +1006,7 @@ function loadEditorLot(lotId) {
   state.editorLot = structuredClone(lot);
   state.activeLotId = lotId;
   state.adminDrawMode = false;
-  if (state.isMobileLayout) {
-    state.mobileAdminPanelOpen = true;
-  }
+  state.adminPanelOpen = true;
   syncAdminUI();
   syncLotElements();
   persistAdminDraft();
@@ -948,7 +1018,7 @@ function startNewLot() {
   state.editorLot = createEmptyLot(nextLotNumber());
   state.adminDrawMode = true;
   if (state.isMobileLayout) {
-    state.mobileAdminPanelOpen = true;
+    state.adminPanelOpen = false;
   }
   syncAdminUI();
   syncLotElements();
@@ -959,7 +1029,7 @@ function toggleDrawMode() {
   state.adminDrawMode = !state.adminDrawMode;
 
   if (state.isMobileLayout && state.adminDrawMode) {
-    state.mobileAdminPanelOpen = false;
+    state.adminPanelOpen = false;
   }
 
   syncAdminUI();
@@ -1154,5 +1224,5 @@ function publishLotData() {
 
   persistPublishedLotData(payload);
   state.publishedLotData = structuredClone(payload);
-  setAdminSyncState("Published locally. Open the page without ?admin=1 to see the customer view.");
+  setAdminSyncState("Published locally. Switch to Customer mode to review the buyer view.");
 }

@@ -377,15 +377,40 @@ button {
   width: min(24rem, calc(100% - 40px));
   max-height: calc(100% - 40px);
   overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   padding: 18px 18px 24px;
   border: 1px solid var(--surface-line);
   border-radius: 24px;
   background: var(--surface);
 }
 
+.admin-panel.is-collapsed {
+  transform: translateX(calc(100% + 24px));
+  opacity: 0;
+  pointer-events: none;
+}
+
 .admin-header {
   padding-bottom: 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-hide-button {
+  flex: 0 0 auto;
+  min-height: 2.45rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--surface-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
 }
 
 .admin-actions {
@@ -454,6 +479,7 @@ button {
 .field select:focus,
 .field textarea:focus,
 .admin-actions button:focus-visible,
+.panel-hide-button:focus-visible,
 .mode-switch button:focus-visible,
 .upload-button:focus-visible,
 .viewer-toolbar button:focus-visible,
@@ -529,7 +555,18 @@ button {
 }
 
 .mobile-admin-toggle {
-  display: none;
+  top: 20px;
+  right: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.7rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid rgba(217, 130, 78, 0.45);
+  border-radius: 999px;
+  background: rgba(10, 15, 19, 0.92);
+  color: var(--text-main);
+  box-shadow: var(--shadow);
 }
 
 .viewer-toolbar {
@@ -667,16 +704,8 @@ button {
   .mobile-admin-toggle {
     top: 12px;
     right: 12px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     min-height: 2.6rem;
     padding: 0.7rem 0.95rem;
-    border: 1px solid rgba(217, 130, 78, 0.45);
-    border-radius: 999px;
-    background: rgba(10, 15, 19, 0.92);
-    color: var(--text-main);
-    box-shadow: var(--shadow);
   }
 
   .viewer-toolbar {
@@ -713,7 +742,7 @@ button {
     border-radius: 28px 28px 18px 18px;
   }
 
-  .admin-panel.is-mobile-collapsed {
+  .admin-panel.is-collapsed {
     transform: translateY(calc(100% + 20px));
     opacity: 0;
     pointer-events: none;
