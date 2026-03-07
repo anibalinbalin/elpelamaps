@@ -19,8 +19,6 @@ Open `http://127.0.0.1:3000/?admin=1` to draw and manage lot polygons.
 - `Start drawing`: click the panorama to add polygon points
 - `Save lot`: keeps the current lot in the browser draft
 - `Publish locally`: makes the saved lots visible in normal public mode in the same browser
-- `Download JSON`: exports the lot dataset so you can commit it into `public/data/playa-brava-jose-ignacio-lots.json`
-- `Import JSON`: restores a previous export into the admin editor
 
 To see the customer view, open `http://127.0.0.1:3000/` without `?admin=1`. Clicking a published lot opens its detail card.
 

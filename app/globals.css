@@ -59,6 +59,7 @@ button {
   position: relative;
   height: 100%;
   overflow: hidden;
+  container-type: inline-size;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 30px;
   background-color: #11181f;
@@ -376,7 +377,7 @@ button {
   width: min(24rem, calc(100% - 40px));
   max-height: calc(100% - 40px);
   overflow: auto;
-  padding: 18px;
+  padding: 18px 18px 24px;
   border: 1px solid var(--surface-line);
   border-radius: 24px;
   background: var(--surface);
@@ -527,6 +528,10 @@ button {
   color: #ffe6e6;
 }
 
+.mobile-admin-toggle {
+  display: none;
+}
+
 .viewer-toolbar {
   left: 20px;
   bottom: 20px;
@@ -545,6 +550,13 @@ button {
   background: var(--surface-strong);
   color: var(--text-main);
   white-space: nowrap;
+}
+
+.viewer-toolbar,
+.viewer-status,
+.lot-card,
+.admin-panel {
+  transition: opacity 0.22s ease, transform 0.22s ease;
 }
 
 .viewer-toolbar button:hover,
@@ -601,8 +613,13 @@ button {
 }
 
 @media (max-width: 720px) {
+  .app-shell {
+    padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right))
+      max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+  }
+
   .viewer-shell {
-    height: calc(100dvh - max(24px, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+    height: calc(100dvh - max(20px, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
   }
 
   .viewer-stage {
@@ -610,76 +627,159 @@ button {
   }
 
   .viewer-copy {
-    top: 16px;
-    left: 16px;
-    right: 16px;
-    max-width: none;
-    padding: 16px;
+    top: 12px;
+    left: 12px;
+    right: auto;
+    max-width: min(18rem, calc(100% - 88px));
+    padding: 14px;
   }
 
   .viewer-copy h1 {
-    font-size: clamp(2rem, 11vw, 3rem);
+    font-size: clamp(1.9rem, 9.4vw, 2.75rem);
   }
 
   .lede {
-    font-size: 0.96rem;
+    margin-top: 10px;
+    font-size: 0.92rem;
+  }
+
+  .meta-row {
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .meta-pill {
+    min-height: 2rem;
+    padding: 0.45rem 0.72rem;
+    font-size: 0.82rem;
+  }
+
+  .mode-switch {
+    display: flex;
+    width: 100%;
+  }
+
+  .mode-switch button {
+    flex: 1 1 0;
+    justify-content: center;
+  }
+
+  .mobile-admin-toggle {
+    top: 12px;
+    right: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.6rem;
+    padding: 0.7rem 0.95rem;
+    border: 1px solid rgba(217, 130, 78, 0.45);
+    border-radius: 999px;
+    background: rgba(10, 15, 19, 0.92);
+    color: var(--text-main);
+    box-shadow: var(--shadow);
   }
 
   .viewer-toolbar {
-    left: 16px;
-    right: 16px;
-    bottom: 16px;
-    justify-content: flex-start;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: none;
+    gap: 8px;
   }
 
   .lot-card,
   .admin-panel {
-    left: 16px;
-    right: 16px;
+    left: 12px;
+    right: 12px;
     width: auto;
   }
 
   .lot-card {
     top: auto;
-    bottom: 152px;
+    bottom: 12px;
+    max-height: min(54dvh, 28rem);
+    overflow: auto;
+    padding: 16px 16px calc(18px + env(safe-area-inset-bottom));
+    border-radius: 28px 28px 18px 18px;
   }
 
   .admin-panel {
     top: auto;
-    bottom: 152px;
-    max-height: min(60dvh, 34rem);
+    bottom: 12px;
+    max-height: min(72dvh, 40rem);
+    padding: 16px 16px calc(28px + env(safe-area-inset-bottom));
+    border-radius: 28px 28px 18px 18px;
+  }
+
+  .admin-panel.is-mobile-collapsed {
+    transform: translateY(calc(100% + 20px));
+    opacity: 0;
+    pointer-events: none;
   }
 
   .viewer-toolbar button {
-    flex: 1 1 9rem;
     justify-content: center;
+    min-height: 2.65rem;
+    padding: 0.72rem 0.85rem;
   }
 
   .viewer-status {
-    left: 16px;
-    bottom: 152px;
+    left: 12px;
+    right: 12px;
+    bottom: 140px;
+    border-radius: 18px;
+    text-align: center;
     font-size: 0.9rem;
+  }
+
+  .lot-label {
+    max-width: min(10rem, 42cqw);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.85rem;
+  }
+
+  .viewer-stage.is-admin-panel-open .viewer-toolbar,
+  .viewer-stage.is-admin-panel-open .viewer-status,
+  .viewer-stage.has-open-card .viewer-toolbar,
+  .viewer-stage.has-open-card .viewer-status {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(12px);
   }
 }
 
 @media (max-width: 520px) {
+  .viewer-copy {
+    max-width: min(15rem, calc(100% - 76px));
+  }
+
+  .viewer-copy h1 {
+    font-size: clamp(1.7rem, 10vw, 2.3rem);
+  }
+
+  .lede {
+    display: none;
+  }
+
+  .mode-switch-label {
+    margin-bottom: 6px;
+    font-size: 0.74rem;
+  }
+
   .field-grid,
   .card-metrics {
     grid-template-columns: 1fr;
   }
 
-  .viewer-toolbar button {
-    flex-basis: calc(50% - 5px);
-  }
-
   .viewer-status {
-    right: 16px;
-    bottom: 144px;
-    border-radius: 20px;
+    bottom: 136px;
   }
 
-  .lot-card,
-  .admin-panel {
-    bottom: 144px;
+  .mobile-admin-toggle {
+    min-height: 2.45rem;
+    padding: 0.65rem 0.82rem;
   }
 }

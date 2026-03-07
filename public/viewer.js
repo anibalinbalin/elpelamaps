@@ -28,6 +28,7 @@ const statusEl = document.getElementById("viewer-status");
 const readoutEl = document.getElementById("view-readout");
 const switchToPublicButton = document.getElementById("switch-to-public");
 const switchToAdminButton = document.getElementById("switch-to-admin");
+const mobileAdminToggleButton = document.getElementById("mobile-admin-toggle");
 const resetButton = document.getElementById("reset-view");
 const zoomOutButton = document.getElementById("zoom-out");
 const zoomInButton = document.getElementById("zoom-in");
@@ -59,10 +60,9 @@ const clearPolygonButton = document.getElementById("clear-polygon");
 const saveLotButton = document.getElementById("save-lot");
 const deleteLotButton = document.getElementById("delete-lot");
 const publishLotsButton = document.getElementById("publish-lots");
-const downloadLotsButton = document.getElementById("download-lots");
-const importLotsInput = document.getElementById("import-lots");
 const confirmDialogEl = document.getElementById("confirm-dialog");
 const confirmCopyEl = document.getElementById("confirm-copy");
+const mobileLayoutMedia = window.matchMedia("(max-width: 720px)");
 
 const state = {
   lon: 0,
@@ -76,6 +76,8 @@ const state = {
   pointerMoved: false,
   hasLoaded: false,
   adminEnabled: ADMIN_ENABLED,
+  isMobileLayout: mobileLayoutMedia.matches,
+  mobileAdminPanelOpen: !mobileLayoutMedia.matches,
   adminDrawMode: false,
   activeLotId: null,
   hoveredLotId: null,
@@ -147,6 +149,7 @@ viewerEl.addEventListener("pointercancel", onPointerUp);
 viewerEl.addEventListener("wheel", onWheel, { passive: false });
 window.addEventListener("resize", resizeRenderer);
 window.addEventListener("keydown", onKeyDown);
+mobileLayoutMedia.addEventListener("change", syncResponsiveLayout);
 
 resetButton.addEventListener("click", resetView);
 zoomOutButton.addEventListener("click", () => updateFov(state.fov + VIEWER_LIMITS.zoomStep));
@@ -155,6 +158,7 @@ fullscreenButton.addEventListener("click", toggleFullscreen);
 lotCardCloseButton.addEventListener("click", closeLotCard);
 switchToPublicButton.addEventListener("click", () => switchMode(false));
 switchToAdminButton.addEventListener("click", () => switchMode(true));
+mobileAdminToggleButton.addEventListener("click", toggleMobileAdminPanel);
 
 if (state.adminEnabled) {
   adminPanelEl.hidden = false;
@@ -165,8 +169,6 @@ if (state.adminEnabled) {
   saveLotButton.addEventListener("click", saveEditorLot);
   deleteLotButton.addEventListener("click", queueDeleteLot);
   publishLotsButton.addEventListener("click", publishLotData);
-  downloadLotsButton.addEventListener("click", downloadLotData);
-  importLotsInput.addEventListener("change", importLotData);
   lotNameInput.addEventListener("input", () => {
     state.editorLot.name = lotNameInput.value;
     state.editorLot.id = slugify(lotNameInput.value) || state.editorLot.id;
@@ -210,6 +212,7 @@ updateReadout();
 syncFullscreenButton();
 syncAdminUI();
 syncModeToggle();
+syncResponsiveLayout();
 
 window.elPela360 = {
   getLotData: () => structuredClone(state.lotData),
@@ -314,7 +317,7 @@ async function initializeLotData() {
         state.editorLot = createEmptyLot(nextLotNumber());
         state.selectedLotId = null;
       }
-      setAdminSyncState("Loaded published lots. Changes stay local until you publish or download.");
+      setAdminSyncState("Loaded published lots. Changes stay local until you publish.");
     }
   } else {
     state.lotData = published;
@@ -405,6 +408,28 @@ function syncModeToggle() {
   switchToAdminButton.setAttribute("aria-pressed", String(state.adminEnabled));
 }
 
+function syncResponsiveLayout() {
+  state.isMobileLayout = mobileLayoutMedia.matches;
+
+  viewerEl.classList.toggle("is-mobile-layout", state.isMobileLayout);
+
+  if (!state.adminEnabled) {
+    mobileAdminToggleButton.hidden = true;
+    viewerEl.classList.remove("is-admin-panel-open");
+    return;
+  }
+
+  if (!state.isMobileLayout) {
+    state.mobileAdminPanelOpen = true;
+  }
+
+  mobileAdminToggleButton.hidden = !state.isMobileLayout;
+  mobileAdminToggleButton.textContent = state.mobileAdminPanelOpen ? "Hide editor" : "Open editor";
+  mobileAdminToggleButton.setAttribute("aria-expanded", String(state.mobileAdminPanelOpen));
+  adminPanelEl.classList.toggle("is-mobile-collapsed", state.isMobileLayout && !state.mobileAdminPanelOpen);
+  viewerEl.classList.toggle("is-admin-panel-open", state.isMobileLayout && state.mobileAdminPanelOpen);
+}
+
 function switchMode(enableAdmin) {
   if (enableAdmin === state.adminEnabled) {
     return;
@@ -421,6 +446,15 @@ function switchMode(enableAdmin) {
   window.location.href = url.toString();
 }
 
+function toggleMobileAdminPanel() {
+  if (!state.adminEnabled || !state.isMobileLayout) {
+    return;
+  }
+
+  state.mobileAdminPanelOpen = !state.mobileAdminPanelOpen;
+  syncResponsiveLayout();
+}
+
 function resizeRenderer() {
   const width = viewerEl.clientWidth;
   const height = viewerEl.clientHeight;
@@ -429,6 +463,7 @@ function resizeRenderer() {
   camera.updateProjectionMatrix();
   renderer.setSize(width, height);
   lotOverlayEl.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  syncResponsiveLayout();
 }
 
 function updateCamera() {
@@ -816,11 +851,15 @@ function activateLot(lotId) {
 function closeLotCard() {
   state.activeLotId = null;
   lotCardEl.hidden = true;
+  lotCardEl.classList.remove("is-open");
+  viewerEl.classList.remove("has-open-card");
 }
 
 function renderActiveLotCard() {
   if (state.adminEnabled) {
     lotCardEl.hidden = true;
+    lotCardEl.classList.remove("is-open");
+    viewerEl.classList.remove("has-open-card");
     return;
   }
 
@@ -828,10 +867,14 @@ function renderActiveLotCard() {
 
   if (!lot) {
     lotCardEl.hidden = true;
+    lotCardEl.classList.remove("is-open");
+    viewerEl.classList.remove("has-open-card");
     return;
   }
 
   lotCardEl.hidden = false;
+  lotCardEl.classList.add("is-open");
+  viewerEl.classList.toggle("has-open-card", state.isMobileLayout);
   lotCardStatusEl.textContent = STATUS_META[lot.status]?.label ?? "Available";
   lotCardTitleEl.textContent = lot.name;
   lotCardDescriptionEl.hidden = !lot.description;
@@ -891,6 +934,9 @@ function loadEditorLot(lotId) {
   state.editorLot = structuredClone(lot);
   state.activeLotId = lotId;
   state.adminDrawMode = false;
+  if (state.isMobileLayout) {
+    state.mobileAdminPanelOpen = true;
+  }
   syncAdminUI();
   syncLotElements();
   persistAdminDraft();
@@ -901,6 +947,9 @@ function startNewLot() {
   state.activeLotId = null;
   state.editorLot = createEmptyLot(nextLotNumber());
   state.adminDrawMode = true;
+  if (state.isMobileLayout) {
+    state.mobileAdminPanelOpen = true;
+  }
   syncAdminUI();
   syncLotElements();
   markAdminDirty();
@@ -908,6 +957,11 @@ function startNewLot() {
 
 function toggleDrawMode() {
   state.adminDrawMode = !state.adminDrawMode;
+
+  if (state.isMobileLayout && state.adminDrawMode) {
+    state.mobileAdminPanelOpen = false;
+  }
+
   syncAdminUI();
   persistAdminDraft();
 }
@@ -1000,6 +1054,7 @@ function syncAdminUI() {
       : "No polygon points yet. Turn on drawing and click on the land.";
 
   syncAdminLotList();
+  syncResponsiveLayout();
 }
 
 function syncAdminLotList() {
@@ -1086,24 +1141,6 @@ function onConfirmDialogClose() {
   markAdminDirty();
 }
 
-function downloadLotData() {
-  const payload = {
-    ...state.lotData,
-    updatedAt: new Date().toISOString()
-  };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], {
-    type: "application/json"
-  });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "playa-brava-jose-ignacio-lots.json";
-  link.click();
-  URL.revokeObjectURL(url);
-
-  setAdminSyncState("Downloaded JSON. Replace data/playa-brava-jose-ignacio-lots.json to publish these lots.");
-}
-
 function publishLotData() {
   if (state.lotData.lots.length === 0) {
     setAdminSyncState("Save at least one lot before publishing the customer view.");
@@ -1118,29 +1155,4 @@ function publishLotData() {
   persistPublishedLotData(payload);
   state.publishedLotData = structuredClone(payload);
   setAdminSyncState("Published locally. Open the page without ?admin=1 to see the customer view.");
-}
-
-async function importLotData(event) {
-  const file = event.target.files?.[0];
-
-  if (!file) {
-    return;
-  }
-
-  try {
-    const text = await file.text();
-    const data = normalizeLotData(JSON.parse(text));
-    state.lotData = data;
-    state.selectedLotId = data.lots[0]?.id ?? null;
-    state.editorLot = data.lots[0] ? structuredClone(data.lots[0]) : createEmptyLot(nextLotNumber());
-    state.adminDrawMode = false;
-    syncLotElements();
-    syncAdminUI();
-    markAdminDirty();
-    setAdminSyncState("Imported JSON into admin mode. Publish locally to preview it as a customer.");
-  } catch {
-    setAdminSyncState("That JSON file could not be imported.");
-  } finally {
-    importLotsInput.value = "";
-  }
 }

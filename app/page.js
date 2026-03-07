@@ -80,7 +80,7 @@ export default function Page() {
                 <p className="eyebrow">Admin mode</p>
                 <h2>Lot editor</h2>
                 <p className="admin-copy" id="admin-sync-state">
-                  Changes stay in this browser until you publish or download.
+                  Changes stay in this browser until you publish.
                 </p>
               </div>
 
@@ -164,13 +164,6 @@ export default function Page() {
                 <button type="button" id="publish-lots">
                   Publish locally
                 </button>
-                <button type="button" id="download-lots">
-                  Download JSON
-                </button>
-                <label className="upload-button" htmlFor="import-lots">
-                  Import JSON
-                </label>
-                <input id="import-lots" type="file" accept="application/json" hidden />
               </div>
 
               <div className="lot-list-shell">
@@ -178,6 +171,10 @@ export default function Page() {
                 <div className="lot-list" id="lot-list" />
               </div>
             </aside>
+
+            <button type="button" className="viewer-overlay mobile-admin-toggle" id="mobile-admin-toggle" hidden>
+              Open editor
+            </button>
 
             <div className="viewer-overlay viewer-toolbar" aria-label="Viewer controls">
               <button type="button" id="reset-view">
