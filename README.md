@@ -15,6 +15,7 @@ Then open `http://127.0.0.1:3000`.
 
 Open `http://127.0.0.1:3000/?admin=1` to draw and manage lot polygons.
 
+- Use the top-left `Customer / Admin` toggle to switch modes during demos
 - `Start drawing`: click the panorama to add polygon points
 - `Save lot`: keeps the current lot in the browser draft
 - `Publish locally`: makes the saved lots visible in normal public mode in the same browser

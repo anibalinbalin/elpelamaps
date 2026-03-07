@@ -26,6 +26,8 @@ const lotOverlayEl = document.getElementById("lot-overlay");
 const lotLabelLayerEl = document.getElementById("lot-label-layer");
 const statusEl = document.getElementById("viewer-status");
 const readoutEl = document.getElementById("view-readout");
+const switchToPublicButton = document.getElementById("switch-to-public");
+const switchToAdminButton = document.getElementById("switch-to-admin");
 const resetButton = document.getElementById("reset-view");
 const zoomOutButton = document.getElementById("zoom-out");
 const zoomInButton = document.getElementById("zoom-in");
@@ -151,6 +153,8 @@ zoomOutButton.addEventListener("click", () => updateFov(state.fov + VIEWER_LIMIT
 zoomInButton.addEventListener("click", () => updateFov(state.fov - VIEWER_LIMITS.zoomStep));
 fullscreenButton.addEventListener("click", toggleFullscreen);
 lotCardCloseButton.addEventListener("click", closeLotCard);
+switchToPublicButton.addEventListener("click", () => switchMode(false));
+switchToAdminButton.addEventListener("click", () => switchMode(true));
 
 if (state.adminEnabled) {
   adminPanelEl.hidden = false;
@@ -205,6 +209,7 @@ render();
 updateReadout();
 syncFullscreenButton();
 syncAdminUI();
+syncModeToggle();
 
 window.elPela360 = {
   getLotData: () => structuredClone(state.lotData),
@@ -391,6 +396,29 @@ function normalizeAngle(angle) {
 function updateReadout() {
   const heading = Math.round(normalizeAngle(state.lon));
   readoutEl.textContent = `Yaw ${heading}° · Zoom ${Math.round(state.fov)}°`;
+}
+
+function syncModeToggle() {
+  switchToPublicButton.classList.toggle("is-active", !state.adminEnabled);
+  switchToAdminButton.classList.toggle("is-active", state.adminEnabled);
+  switchToPublicButton.setAttribute("aria-pressed", String(!state.adminEnabled));
+  switchToAdminButton.setAttribute("aria-pressed", String(state.adminEnabled));
+}
+
+function switchMode(enableAdmin) {
+  if (enableAdmin === state.adminEnabled) {
+    return;
+  }
+
+  const url = new URL(window.location.href);
+
+  if (enableAdmin) {
+    url.searchParams.set("admin", "1");
+  } else {
+    url.searchParams.delete("admin");
+  }
+
+  window.location.href = url.toString();
 }
 
 function resizeRenderer() {

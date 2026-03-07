@@ -31,6 +31,17 @@ export default function Page() {
                   Yaw 0° · Zoom 75°
                 </span>
               </div>
+              <div className="mode-switch-shell">
+                <p className="mode-switch-label">Demo mode</p>
+                <div className="mode-switch" role="group" aria-label="View mode">
+                  <button type="button" id="switch-to-public">
+                    Customer
+                  </button>
+                  <button type="button" id="switch-to-admin">
+                    Admin
+                  </button>
+                </div>
+              </div>
             </div>
 
             <aside className="viewer-overlay lot-card" id="lot-card" hidden>
