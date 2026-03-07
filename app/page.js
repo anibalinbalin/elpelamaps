@@ -18,21 +18,31 @@ export default function Page() {
             />
             <div className="viewer-label-layer" id="lot-label-layer" aria-live="polite" />
 
-            <div className="viewer-overlay viewer-copy">
-              <p className="eyebrow">Interactive 360</p>
-              <h1>Playa Brava Jose Ignacio</h1>
+            <div className="viewer-overlay viewer-copy" id="viewer-copy">
+              <p className="eyebrow">El Pela · Jose Ignacio, Uruguay</p>
+              <h1>Playa Brava</h1>
               <p className="lede">
-                Drag to look around, use the wheel to zoom, and click a lot to open its real
-                estate details.
+                Premium coastal lots for your next home. Explore the terrain in
+                360° and click any lot for details.
               </p>
               <div className="meta-row">
-                <span className="meta-pill">Local panorama asset</span>
+                <span className="meta-pill" id="availability-counter" />
                 <span className="meta-pill" id="view-readout">
                   Yaw 0° · Zoom 75°
                 </span>
               </div>
-              <div className="mode-switch-shell">
-                <p className="mode-switch-label">Demo mode</p>
+              <div className="status-legend" id="status-legend">
+                <span className="legend-item" data-status="available">
+                  <span className="legend-dot" />Available
+                </span>
+                <span className="legend-item" data-status="reserved">
+                  <span className="legend-dot" />Reserved
+                </span>
+                <span className="legend-item" data-status="sold">
+                  <span className="legend-dot" />Sold
+                </span>
+              </div>
+              <div className="mode-switch-shell" id="mode-switch-shell">
                 <div className="mode-switch" role="group" aria-label="View mode">
                   <button type="button" id="switch-to-public">
                     Customer
@@ -74,6 +84,32 @@ export default function Page() {
                 Request info
               </a>
             </aside>
+
+            <aside className="viewer-overlay lot-index" id="lot-index" hidden>
+              <div className="lot-index-header">
+                <div>
+                  <p className="eyebrow">Browse</p>
+                  <h2>All Lots</h2>
+                </div>
+                <button type="button" className="card-dismiss" id="lot-index-close">
+                  Close
+                </button>
+              </div>
+              <div className="lot-index-list" id="lot-index-list" />
+            </aside>
+
+            <div className="viewer-overlay drag-hint" id="drag-hint">
+              Drag to explore
+            </div>
+
+            <div className="viewer-overlay compass" id="compass" aria-hidden="true">
+              <svg viewBox="0 0 48 48" width="48" height="48">
+                <circle cx="24" cy="24" r="22" fill="none" stroke="var(--surface-line)" strokeWidth="1.5" />
+                <text x="24" y="11" textAnchor="middle" fill="var(--accent)" fontSize="9" fontWeight="700">N</text>
+                <polygon points="24,14 21,24 27,24" fill="var(--accent)" />
+                <polygon points="24,34 21,24 27,24" fill="var(--text-muted)" fillOpacity="0.4" />
+              </svg>
+            </div>
 
             <aside className="viewer-overlay admin-panel" id="admin-panel" hidden>
               <div className="admin-header">
@@ -184,6 +220,9 @@ export default function Page() {
             </button>
 
             <div className="viewer-overlay viewer-toolbar" aria-label="Viewer controls">
+              <button type="button" id="browse-lots">
+                Browse lots
+              </button>
               <button type="button" id="reset-view">
                 Reset view
               </button>

@@ -812,3 +812,240 @@ button {
     padding: 0.65rem 0.82rem;
   }
 }
+
+/* ── Status legend ────────────────────────────────────── */
+
+.status-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.legend-item[data-status="available"] .legend-dot {
+  background: var(--available);
+}
+
+.legend-item[data-status="reserved"] .legend-dot {
+  background: var(--reserved);
+}
+
+.legend-item[data-status="sold"] .legend-dot {
+  background: var(--sold);
+}
+
+/* ── Lot index ────────────────────────────────────────── */
+
+.lot-index {
+  top: 20px;
+  right: 20px;
+  width: min(22rem, calc(100% - 40px));
+  max-height: calc(100% - 40px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 18px;
+  border: 1px solid var(--surface-line);
+  border-radius: 24px;
+  background: var(--surface);
+}
+
+.lot-index-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.lot-index-header h2 {
+  margin: 6px 0 0;
+  font-size: 1.4rem;
+  line-height: 1.1;
+}
+
+.lot-index-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.lot-index-item {
+  display: block;
+  width: 100%;
+  padding: 0.8rem 0.95rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 3px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-main);
+  text-align: left;
+  cursor: pointer;
+}
+
+.lot-index-item:hover,
+.lot-index-item:focus-visible {
+  border-color: rgba(217, 130, 78, 0.5);
+  outline: none;
+}
+
+.lot-index-item[data-status="available"] {
+  border-left-color: var(--available);
+}
+
+.lot-index-item[data-status="reserved"] {
+  border-left-color: var(--reserved);
+}
+
+.lot-index-item[data-status="sold"] {
+  border-left-color: var(--sold);
+}
+
+.lot-index-item strong {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.lot-index-status {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+}
+
+.lot-index-meta {
+  display: block;
+  margin-top: 5px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.lot-index-empty {
+  margin: 0;
+  padding: 1rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* ── Drag hint ────────────────────────────────────────── */
+
+.drag-hint {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 0.78rem 1.15rem;
+  border-radius: 999px;
+  background: var(--surface-strong);
+  border: 1px solid var(--surface-line);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  pointer-events: none;
+  animation: pulse-hint 2.5s ease-in-out infinite;
+}
+
+.drag-hint.is-dismissed {
+  animation: none;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+@keyframes pulse-hint {
+  0%, 100% { opacity: 0.85; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.5; transform: translate(-50%, -50%) scale(1.04); }
+}
+
+/* ── Compass ──────────────────────────────────────────── */
+
+.compass {
+  right: 20px;
+  bottom: 20px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--surface-strong);
+  border: 1px solid var(--surface-line);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+/* ── Responsive: new elements ─────────────────────────── */
+
+@media (max-width: 720px) {
+  .lot-index {
+    left: 12px;
+    right: 12px;
+    top: auto;
+    bottom: 12px;
+    width: auto;
+    max-height: min(54dvh, 28rem);
+    padding: 16px 16px calc(18px + env(safe-area-inset-bottom));
+    border-radius: 28px 28px 18px 18px;
+  }
+
+  .compass {
+    right: 12px;
+    bottom: 78px;
+    width: 40px;
+    height: 40px;
+  }
+
+  .compass svg {
+    width: 40px;
+    height: 40px;
+  }
+
+  .viewer-stage.has-open-card .compass,
+  .viewer-stage.is-admin-panel-open .compass,
+  .viewer-stage.has-open-index .compass {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(8px);
+  }
+
+  .viewer-stage.has-open-index .viewer-toolbar,
+  .viewer-stage.has-open-index .viewer-status {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(12px);
+  }
+
+  .status-legend {
+    gap: 10px;
+  }
+
+  .legend-item {
+    font-size: 0.76rem;
+  }
+
+  .drag-hint {
+    font-size: 0.82rem;
+    padding: 0.68rem 1rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .status-legend {
+    gap: 8px;
+  }
+}

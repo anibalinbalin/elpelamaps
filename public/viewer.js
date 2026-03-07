@@ -66,6 +66,15 @@ const deleteLotButton = document.getElementById("delete-lot");
 const publishLotsButton = document.getElementById("publish-lots");
 const confirmDialogEl = document.getElementById("confirm-dialog");
 const confirmCopyEl = document.getElementById("confirm-copy");
+const availabilityCounterEl = document.getElementById("availability-counter");
+const lotIndexEl = document.getElementById("lot-index");
+const lotIndexListEl = document.getElementById("lot-index-list");
+const lotIndexCloseButton = document.getElementById("lot-index-close");
+const browseLotsButton = document.getElementById("browse-lots");
+const compassEl = document.getElementById("compass");
+const dragHintEl = document.getElementById("drag-hint");
+const modeSwitchShellEl = document.getElementById("mode-switch-shell");
+const statusLegendEl = document.getElementById("status-legend");
 const mobileLayoutMedia = window.matchMedia("(max-width: 720px)");
 
 const state = {
@@ -165,6 +174,8 @@ switchToPublicButton.addEventListener("click", () => switchMode(false));
 switchToAdminButton.addEventListener("click", () => switchMode(true));
 panelToggleButton.addEventListener("click", toggleAdminPanel);
 adminPanelHideButton.addEventListener("click", toggleAdminPanel);
+browseLotsButton.addEventListener("click", toggleLotIndex);
+lotIndexCloseButton.addEventListener("click", closeLotIndex);
 
 if (state.adminEnabled) {
   adminPanelEl.hidden = false;
@@ -334,6 +345,9 @@ async function initializeLotData() {
 
   syncLotElements();
   syncAdminUI();
+  syncCustomerMode();
+  syncAvailabilityCounter();
+  syncCustomerLotIndex();
 }
 
 function readAdminDraft() {
@@ -533,6 +547,7 @@ function render() {
   if (state.hasLoaded) {
     renderer.render(scene, camera);
     renderLotOverlay();
+    syncCompass();
   }
 }
 
@@ -562,6 +577,7 @@ function onPointerDown(event) {
 
   viewerEl.classList.add("is-dragging");
   viewerEl.setPointerCapture(event.pointerId);
+  dismissDragHint();
 }
 
 function onPointerMove(event) {
@@ -914,6 +930,7 @@ function findCentroid(points) {
 
 function activateLot(lotId) {
   state.activeLotId = lotId;
+  closeLotIndex();
 
   if (state.adminEnabled) {
     loadEditorLot(lotId);
@@ -955,8 +972,13 @@ function renderActiveLotCard() {
   lotCardPriceEl.textContent = formatPrice(lot.price_usd);
 
   if (lot.cta_url) {
+    let href = lot.cta_url;
+    if (href.includes("wa.me")) {
+      const sep = href.includes("?") ? "&" : "?";
+      href += `${sep}text=${encodeURIComponent(`Hi, I'm interested in ${lot.name} at Playa Brava, Jose Ignacio.`)}`;
+    }
     lotCardLinkEl.hidden = false;
-    lotCardLinkEl.href = lot.cta_url;
+    lotCardLinkEl.href = href;
     lotCardLinkEl.textContent = lot.cta_label || "Request info";
   } else {
     lotCardLinkEl.hidden = true;
@@ -1225,4 +1247,131 @@ function publishLotData() {
   persistPublishedLotData(payload);
   state.publishedLotData = structuredClone(payload);
   setAdminSyncState("Published locally. Switch to Customer mode to review the buyer view.");
+}
+
+// ── Customer UI ──────────────────────────────────────────
+
+function syncCustomerMode() {
+  readoutEl.hidden = !state.adminEnabled;
+  browseLotsButton.hidden = state.adminEnabled;
+  dragHintEl.hidden = state.adminEnabled;
+}
+
+function syncAvailabilityCounter() {
+  const lots = getRenderableLots();
+  const available = lots.filter((l) => l.status === "available").length;
+  availabilityCounterEl.textContent = `${available} of ${lots.length} lots available`;
+}
+
+function syncCustomerLotIndex() {
+  while (lotIndexListEl.firstChild) {
+    lotIndexListEl.firstChild.remove();
+  }
+
+  const lots = getRenderableLots();
+
+  if (lots.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "lot-index-empty";
+    empty.textContent = "No lots available yet.";
+    lotIndexListEl.append(empty);
+    return;
+  }
+
+  for (const lot of lots) {
+    const item = document.createElement("button");
+    item.type = "button";
+    item.className = "lot-index-item";
+    item.dataset.status = lot.status;
+
+    const name = document.createElement("strong");
+    name.textContent = lot.name;
+
+    const status = document.createElement("span");
+    status.className = "lot-index-status";
+    status.textContent = STATUS_META[lot.status]?.label ?? "Available";
+
+    const meta = document.createElement("span");
+    meta.className = "lot-index-meta";
+    const parts = [];
+    if (lot.area_m2) parts.push(formatArea(lot.area_m2));
+    if (lot.price_usd) parts.push(formatPrice(lot.price_usd));
+    meta.textContent = parts.join(" · ") || "Details pending";
+
+    item.append(name, status, meta);
+    item.addEventListener("click", () => {
+      closeLotIndex();
+      flyToLot(lot.id);
+      state.activeLotId = lot.id;
+    });
+
+    lotIndexListEl.append(item);
+  }
+}
+
+function toggleLotIndex() {
+  const isOpen = !lotIndexEl.hidden;
+
+  if (isOpen) {
+    closeLotIndex();
+  } else {
+    closeLotCard();
+    syncCustomerLotIndex();
+    lotIndexEl.hidden = false;
+    viewerEl.classList.toggle("has-open-index", state.isMobileLayout);
+  }
+}
+
+function closeLotIndex() {
+  lotIndexEl.hidden = true;
+  viewerEl.classList.remove("has-open-index");
+}
+
+function flyToLot(lotId) {
+  const lot = getRenderableLots().find((l) => l.id === lotId);
+
+  if (!lot || lot.polygon.length < 3) {
+    return;
+  }
+
+  const targetYaw = lot.polygon.reduce((s, p) => s + p.yaw, 0) / lot.polygon.length;
+  const targetPitch = lot.polygon.reduce((s, p) => s + p.pitch, 0) / lot.polygon.length;
+
+  const startLon = state.lon;
+  const startLat = state.lat;
+
+  let deltaLon = targetYaw - startLon;
+  deltaLon = ((deltaLon + 180) % 360 + 360) % 360 - 180;
+
+  const duration = 600;
+  const start = performance.now();
+
+  function step(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+    state.lon = startLon + deltaLon * ease;
+    state.lat = startLat + (targetPitch - startLat) * ease;
+
+    if (t < 1) {
+      requestAnimationFrame(step);
+    }
+  }
+
+  requestAnimationFrame(step);
+}
+
+function syncCompass() {
+  if (!compassEl) {
+    return;
+  }
+
+  compassEl.style.transform = `rotate(${-state.lon}deg)`;
+}
+
+function dismissDragHint() {
+  if (dragHintEl && !dragHintEl.hidden && !dragHintEl.classList.contains("is-dismissed")) {
+    dragHintEl.classList.add("is-dismissed");
+    setTimeout(() => { dragHintEl.hidden = true; }, 600);
+  }
 }
