@@ -1,0 +1,647 @@
+:root {
+  color-scheme: dark;
+  --surface: rgba(10, 15, 19, 0.86);
+  --surface-strong: rgba(10, 15, 19, 0.94);
+  --surface-line: rgba(255, 255, 255, 0.16);
+  --text-main: #f6f3ee;
+  --text-muted: rgba(246, 243, 238, 0.74);
+  --accent: #d9824e;
+  --available: #6ab781;
+  --reserved: #d5a55a;
+  --sold: #cd6a6a;
+  --shadow: 0 24px 60px rgba(0, 0, 0, 0.34);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: #0b1014;
+  color: var(--text-main);
+  font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.app-shell {
+  min-height: 100dvh;
+  padding-top: max(16px, env(safe-area-inset-top));
+  padding-right: max(16px, env(safe-area-inset-right));
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  padding-left: max(16px, env(safe-area-inset-left));
+}
+
+.viewer-shell {
+  height: calc(100dvh - max(32px, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+}
+
+.viewer-stage {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 30px;
+  background-color: #11181f;
+  background-image: var(--viewer-preview);
+  background-position: center;
+  background-size: cover;
+  box-shadow: var(--shadow);
+  isolation: isolate;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+.viewer-stage.is-dragging {
+  cursor: grabbing;
+}
+
+.viewer-stage.is-draw-mode {
+  cursor: crosshair;
+}
+
+.viewer-stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.viewer-stage::after {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  content: "";
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.viewer-overlay {
+  position: absolute;
+  z-index: 2;
+}
+
+.viewer-lot-overlay,
+.viewer-label-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.viewer-lot-overlay {
+  z-index: 1;
+  pointer-events: none;
+}
+
+.viewer-label-layer {
+  z-index: 2;
+  pointer-events: none;
+}
+
+.viewer-copy {
+  top: 20px;
+  left: 20px;
+  max-width: min(30rem, calc(100% - 40px));
+  padding: 18px 18px 16px;
+  border: 1px solid var(--surface-line);
+  border-radius: 24px;
+  background: var(--surface);
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.viewer-copy h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3.8rem);
+  line-height: 0.95;
+  text-wrap: balance;
+}
+
+.lede {
+  margin: 14px 0 0;
+  max-width: 36ch;
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+.meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.meta-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.25rem;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.lot-shape,
+.lot-draft {
+  pointer-events: auto;
+  vector-effect: non-scaling-stroke;
+}
+
+.lot-shape {
+  fill: rgba(217, 130, 78, 0.14);
+  stroke-width: 2.5;
+  cursor: pointer;
+}
+
+.lot-shape[data-status="available"] {
+  fill: rgba(106, 183, 129, 0.14);
+  stroke: var(--available);
+}
+
+.lot-shape[data-status="reserved"] {
+  fill: rgba(213, 165, 90, 0.16);
+  stroke: var(--reserved);
+}
+
+.lot-shape[data-status="sold"] {
+  fill: rgba(205, 106, 106, 0.16);
+  stroke: var(--sold);
+}
+
+.lot-shape.is-active,
+.lot-shape.is-hovered {
+  stroke-width: 3.6;
+}
+
+.lot-draft {
+  fill: rgba(217, 130, 78, 0.1);
+  stroke: var(--accent);
+  stroke-dasharray: 10 8;
+  stroke-width: 2.5;
+}
+
+.lot-handle {
+  fill: var(--accent);
+  stroke: rgba(10, 15, 19, 0.9);
+  stroke-width: 2;
+}
+
+.lot-label {
+  position: absolute;
+  z-index: 2;
+  pointer-events: auto;
+  min-height: 2.5rem;
+  padding: 0.62rem 0.88rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(10, 15, 19, 0.9);
+  color: var(--text-main);
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+}
+
+.lot-label[data-status="available"] {
+  border-color: rgba(106, 183, 129, 0.45);
+}
+
+.lot-label[data-status="reserved"] {
+  border-color: rgba(213, 165, 90, 0.45);
+}
+
+.lot-label[data-status="sold"] {
+  border-color: rgba(205, 106, 106, 0.45);
+}
+
+.lot-label.is-active,
+.lot-label:hover,
+.lot-label:focus-visible {
+  outline: none;
+  border-color: rgba(217, 130, 78, 0.75);
+}
+
+.lot-card {
+  top: 20px;
+  right: 20px;
+  width: min(22rem, calc(100% - 40px));
+  padding: 18px;
+  border: 1px solid var(--surface-line);
+  border-radius: 24px;
+  background: var(--surface);
+}
+
+.card-dismiss {
+  min-height: 2.2rem;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--surface-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+}
+
+.card-status {
+  margin: 14px 0 0;
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.lot-card h2,
+.admin-panel h2,
+.confirm-sheet h2 {
+  margin: 8px 0 0;
+  font-size: 1.6rem;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+.card-description,
+.admin-copy,
+.confirm-copy {
+  margin: 12px 0 0;
+  color: var(--text-muted);
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+.card-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 0 0;
+}
+
+.card-metrics div {
+  padding: 0.85rem 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.card-metrics dt {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.card-metrics dd {
+  margin: 6px 0 0;
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.card-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.9rem;
+  margin-top: 18px;
+  padding: 0.78rem 1rem;
+  border: 1px solid rgba(217, 130, 78, 0.55);
+  border-radius: 999px;
+  background: rgba(217, 130, 78, 0.12);
+  color: var(--text-main);
+  text-decoration: none;
+}
+
+.admin-panel {
+  top: 20px;
+  right: 20px;
+  width: min(24rem, calc(100% - 40px));
+  max-height: calc(100% - 40px);
+  overflow: auto;
+  padding: 18px;
+  border: 1px solid var(--surface-line);
+  border-radius: 24px;
+  background: var(--surface);
+}
+
+.admin-header {
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.admin-actions button,
+.upload-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.7rem;
+  padding: 0.68rem 0.9rem;
+  border: 1px solid var(--surface-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-main);
+}
+
+.admin-actions-secondary {
+  margin-top: 14px;
+}
+
+.upload-button {
+  cursor: pointer;
+}
+
+.field,
+.field-grid {
+  margin-top: 14px;
+}
+
+.field {
+  display: block;
+}
+
+.field span,
+.lot-list-title {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  min-height: 2.8rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-main);
+}
+
+.field textarea {
+  min-height: 5.5rem;
+  resize: vertical;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus,
+.admin-actions button:focus-visible,
+.upload-button:focus-visible,
+.viewer-toolbar button:focus-visible,
+.card-dismiss:focus-visible,
+.card-link:focus-visible {
+  outline: none;
+  border-color: rgba(217, 130, 78, 0.75);
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-footnote {
+  margin: 14px 0 0;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.lot-list-shell {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.lot-list {
+  display: grid;
+  gap: 10px;
+}
+
+.lot-list-empty {
+  margin: 0;
+  padding: 1rem 1.05rem;
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  color: var(--text-muted);
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+.lot-list button {
+  display: block;
+  width: 100%;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-main);
+  text-align: left;
+}
+
+.lot-list button.is-selected {
+  border-color: rgba(217, 130, 78, 0.75);
+}
+
+.lot-list strong,
+.lot-list span {
+  display: block;
+}
+
+.lot-list span {
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.button-danger {
+  border-color: rgba(205, 106, 106, 0.4) !important;
+  color: #ffe6e6;
+}
+
+.viewer-toolbar {
+  left: 20px;
+  bottom: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 10px;
+  max-width: min(30rem, calc(100% - 40px));
+}
+
+.viewer-toolbar button {
+  min-height: 2.9rem;
+  padding: 0.78rem 1rem;
+  border: 1px solid var(--surface-line);
+  border-radius: 999px;
+  background: var(--surface-strong);
+  color: var(--text-main);
+  white-space: nowrap;
+}
+
+.viewer-toolbar button:hover,
+.viewer-toolbar button:focus-visible {
+  border-color: rgba(217, 130, 78, 0.7);
+  outline: none;
+}
+
+.viewer-status {
+  left: 20px;
+  bottom: 86px;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--surface-line);
+  border-radius: 999px;
+  background: var(--surface-strong);
+  color: var(--text-main);
+  font-size: 0.95rem;
+}
+
+.confirm-dialog {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-main);
+}
+
+.confirm-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.confirm-sheet {
+  width: min(26rem, calc(100vw - 32px));
+  padding: 20px;
+  border: 1px solid var(--surface-line);
+  border-radius: 24px;
+  background: var(--surface-strong);
+  box-shadow: var(--shadow);
+}
+
+.confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.confirm-actions button {
+  min-height: 2.8rem;
+  padding: 0.72rem 1rem;
+  border: 1px solid var(--surface-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-main);
+}
+
+@media (max-width: 720px) {
+  .viewer-shell {
+    height: calc(100dvh - max(24px, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+  }
+
+  .viewer-stage {
+    border-radius: 24px;
+  }
+
+  .viewer-copy {
+    top: 16px;
+    left: 16px;
+    right: 16px;
+    max-width: none;
+    padding: 16px;
+  }
+
+  .viewer-copy h1 {
+    font-size: clamp(2rem, 11vw, 3rem);
+  }
+
+  .lede {
+    font-size: 0.96rem;
+  }
+
+  .viewer-toolbar {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    justify-content: flex-start;
+  }
+
+  .lot-card,
+  .admin-panel {
+    left: 16px;
+    right: 16px;
+    width: auto;
+  }
+
+  .lot-card {
+    top: auto;
+    bottom: 152px;
+  }
+
+  .admin-panel {
+    top: auto;
+    bottom: 152px;
+    max-height: min(60dvh, 34rem);
+  }
+
+  .viewer-toolbar button {
+    flex: 1 1 9rem;
+    justify-content: center;
+  }
+
+  .viewer-status {
+    left: 16px;
+    bottom: 152px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .field-grid,
+  .card-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .viewer-toolbar button {
+    flex-basis: calc(50% - 5px);
+  }
+
+  .viewer-status {
+    right: 16px;
+    bottom: 144px;
+    border-radius: 20px;
+  }
+
+  .lot-card,
+  .admin-panel {
+    bottom: 144px;
+  }
+}

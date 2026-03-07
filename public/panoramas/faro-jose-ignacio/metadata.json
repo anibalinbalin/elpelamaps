@@ -1,0 +1,38 @@
+{
+  "title": "Faro Jose Ignacio",
+  "scene": "scene_44_-_Faro_Jose___Ignacio",
+  "source_tour_url": "https://cms.puntadelesteinternacional.com/360/toures/puntadesdeelaire/",
+  "source_xml_url": "https://cms.puntadelesteinternacional.com/360/toures/puntadesdeelaire/tour.xml",
+  "source_scene_base_url": "https://cms.puntadelesteinternacional.com/360/toures/puntadesdeelaire/panos/44_-_Faro_Jose___Ignacio.tiles/",
+  "downloaded_at": "2026-03-07",
+  "format": {
+    "public_source": "cubemap",
+    "face_order": [
+      "r",
+      "l",
+      "u",
+      "d",
+      "f",
+      "b"
+    ],
+    "face_size": "1536x1536",
+    "files": {
+      "preview": "preview.jpg",
+      "thumb": "thumb.jpg",
+      "right": "vr/pano_r.jpg",
+      "left": "vr/pano_l.jpg",
+      "up": "vr/pano_u.jpg",
+      "down": "vr/pano_d.jpg",
+      "front": "vr/pano_f.jpg",
+      "back": "vr/pano_b.jpg"
+    }
+  },
+  "derived_files": {
+    "cubemap_strip": "cubemap-rludfb.jpg",
+    "equirectangular": "faro-jose-ignacio-equirect.jpg"
+  },
+  "notes": [
+    "The public tour exposes cube faces and multires tiles, not a single source equirectangular JPG.",
+    "The equirectangular JPG in this folder was generated locally from the downloaded cube faces."
+  ]
+}

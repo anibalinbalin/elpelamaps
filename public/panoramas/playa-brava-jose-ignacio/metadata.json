@@ -1,0 +1,34 @@
+{
+  "title": "Playa Brava Jose Ignacio",
+  "scene": "scene_45_-_Playa_Brava_Jose___Ignacio",
+  "source_tour_url": "https://cms.puntadelesteinternacional.com/360/toures/puntadesdeelaire/",
+  "source_xml_url": "https://cms.puntadelesteinternacional.com/360/toures/puntadesdeelaire/tour.xml",
+  "source_scene_base_url": "https://cms.puntadelesteinternacional.com/360/toures/puntadesdeelaire/panos/45_-_Playa_Brava_Jose___Ignacio.tiles/",
+  "downloaded_at": "2026-03-07",
+  "format": {
+    "public_source": "cubemap",
+    "face_order": [
+      "r",
+      "l",
+      "u",
+      "d",
+      "f",
+      "b"
+    ],
+    "face_size": "1536x1536",
+    "files": {
+      "preview": "preview.jpg",
+      "thumb": "thumb.jpg",
+      "right": "vr/pano_r.jpg",
+      "left": "vr/pano_l.jpg",
+      "up": "vr/pano_u.jpg",
+      "down": "vr/pano_d.jpg",
+      "front": "vr/pano_f.jpg",
+      "back": "vr/pano_b.jpg"
+    }
+  },
+  "derived_files": {
+    "cubemap_strip": "cubemap-rludfb.jpg",
+    "equirectangular": "playa-brava-jose-ignacio-equirect.jpg"
+  }
+}
