@@ -1090,8 +1090,8 @@ function saveEditorLot() {
 
   const savedLot = normalizeLot({
     ...state.editorLot,
-    area_m2: state.editorLot.area_m2 ? Number(state.editorLot.area_m2) : "",
-    price_usd: state.editorLot.price_usd ? Number(state.editorLot.price_usd) : ""
+    area_m2: state.editorLot.area_m2 !== "" ? Number(state.editorLot.area_m2) : "",
+    price_usd: state.editorLot.price_usd !== "" ? Number(state.editorLot.price_usd) : ""
   });
   const replaceId = state.selectedLotId || state.editorLot.id;
   const existingIndex = state.lotData.lots.findIndex((lot) => lot.id === replaceId || lot.id === savedLot.id);
